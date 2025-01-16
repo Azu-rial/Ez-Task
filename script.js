@@ -37,6 +37,39 @@ const createTaskElement = (title, date) => {
     return taskItem;
 };
 
+const saveTasksToLocalStorage = () => {
+    const pending = Array.from(pendingTasks.children).map((task) => ({
+        title: task.querySelector('span').textContent.trim(),
+        date: task.querySelector('small').textContent.trim(),
+        completed: false,
+    }));
+
+    const completed = Array.from(completedTasks.children).map((task) => ({
+        title: task.querySelector('span').textContent.trim(),
+        date: task.querySelector('small').textContent.trim(),
+        completed: true,
+    }));
+
+    localStorage.setItem('tasks', JSON.stringify([...pending, ...completed]));
+};
+
+const loadTasksFromLocalStorage = () => {
+    const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    tasks.forEach(({ title, date, completed }) => {
+        const taskElement = createTaskElement(title, date);
+        if (completed) {
+            completedTasks.appendChild(taskElement);
+            taskElement.classList.add('completed-task');
+            taskElement.querySelector('.complete-btn').remove();
+        } else {
+            pendingTasks.appendChild(taskElement);
+        }
+    });
+
+    updateProgressBar();
+};
+
 // Add Task
 addTaskBtn.addEventListener('click', () => {
     const title = taskTitleInput.value.trim();
@@ -49,6 +82,7 @@ addTaskBtn.addEventListener('click', () => {
         taskDateInput.value = '';
         errorMessage.classList.add('hidden');
         updateProgressBar();
+        saveTasksToLocalStorage();
     } else {
         errorMessage.textContent = 'Please provide both a task title and date.';
         errorMessage.classList.remove('hidden');
@@ -63,11 +97,13 @@ document.body.addEventListener('click', (event) => {
         if (event.target.classList.contains('complete-btn')) {
             task.classList.add('completed-task');
             completedTasks.appendChild(task);
-            event.target.remove(); // Remove "Complete" button
+            event.target.remove();
             updateProgressBar();
+            saveTasksToLocalStorage();
         } else if (event.target.classList.contains('delete-btn')) {
             task.remove();
             updateProgressBar();
+            saveTasksToLocalStorage();
         }
     }
 });
@@ -100,4 +136,5 @@ filterButtons.forEach((button) => {
 });
 
 // Initialize
+loadTasksFromLocalStorage();
 updateProgressBar();
